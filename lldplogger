@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+""" An example of building a loggin tool for tracking LLDP changes.
+"""
+from __future__ import print_function
+import lldpy
+import logging
+import sys
+
+class LldpCtl(lldpy.Watcher):
+    """ A custom class to hook into llpdctl utility. """
+    def __init__(self):
+        super(LldpCtl, self).__init__()
+
+    def on_add(self, local, remote):
+        msg = "Add {} on {}".format(remote.chassis_name, local.interface_name)
+        logging.info(msg)
+
+    def on_delete(self, local, remote):
+        msg = "Delete {} on {}".format(remote.chassis_name, local.interface_name)
+        logging.info(msg)
+
+    def on_update(self, local, remote):
+        msg = "Update {} on {}".format(remote.chassis_name, local.interface_name)
+        logging.info(msg)
+
+def main():
+    """ Just spin lldpctl up and log changes. """
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    root.addHandler(ch)
+
+    lldpctl = LldpCtl()
+    lldpctl.start()
+    # LldpCtl thread is blocking and will never quit unless something changes
+    lldpctl.join(30)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
