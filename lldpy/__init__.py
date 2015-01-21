@@ -11,6 +11,7 @@ import liblldpctl
 
 FFI = cffi.FFI()
 LIB = liblldpctl.load(FFI)
+_ = dir(LIB)
 LOGGER = logging.getLogger(__name__)
 
 class Atom(object):
