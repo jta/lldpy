@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import cffi
 from contextlib import contextmanager
+import json
 import logging
 import time
 import threading
@@ -19,31 +20,31 @@ class Atom(object):
     """ Atoms are the primary datatype in lldpctl. Possible keys are listed
         in an enum, every key has a `lldpctl_k_` prefix.
     """
-    prefix = 'lldpctl_k_'
-    keys = [(k, getattr(LIB, k)) for k in dir(LIB) if k.startswith(prefix)]
+    _prefix = 'lldpctl_k_'
+    _keys = [(_k, getattr(LIB, _k)) for _k in dir(LIB) if _k.startswith(_prefix)]
 
     # By omission values are imported as strings. This dict keeps track of atoms which
     # refer to lists, and should be decoded as specific class types.
-    key_to_type = dict()
+    _key_to_type = dict()
 
     def __init__(self, ptr):
         """ Given a ctype pointer we should decode as much as possible. """
-        for keyname, keynum in self.keys:
-            if keyname in self.key_to_type:
+        for keyname, keynum in self._keys:
+            if keyname in self._key_to_type:
                 func = self._decode_as_atom
             else:
                 func = self._decode_as_string
 
             val = func(keyname, keynum, ptr)
             if val is not None:
-                setattr(self, keyname.replace(self.prefix, ''), val)
+                setattr(self, keyname.replace(self._prefix, ''), val)
 
     @classmethod
     def _decode_as_atom(cls, keyname, keynum, ptr):
         """ Get a key field from pointer and extract it as an atom. """
         raw = LIB.lldpctl_atom_get(ptr, keynum)
-        cls_ = cls.key_to_type[keyname]
-        return [cls_(i) for i in Atom.walk(raw)] if raw != FFI.NULL else []
+        cls_ = cls._key_to_type[keyname]
+        return [cls_(i) for i in Atom._walk(raw)] if raw != FFI.NULL else []
 
     @classmethod
     def _decode_as_string(cls, _, keynum, ptr):
@@ -73,10 +74,10 @@ class Atom(object):
         return self._enabled(0x10)
 
     def __repr__(self):
-        return str(self.__dict__)
+        return self.__dict__
 
     @classmethod
-    def walk(cls, ptr):
+    def _walk(cls, ptr):
         """ Given an atom list ptr, iterate over contained atoms. """
         iterator = LIB.lldpctl_atom_iter(ptr)
         while iterator != FFI.NULL:
@@ -87,11 +88,11 @@ class Atom(object):
 
 
 class Port(Atom):
-    key_to_type = dict(lldpctl_k_chassis_mgmt=Atom)
+    _key_to_type = dict(lldpctl_k_chassis_mgmt=Atom)
 
 
 class Ports(Atom):
-    key_to_type = dict(lldpctl_k_port_neighbors=Port)
+    _key_to_type = dict(lldpctl_k_port_neighbors=Port)
 
 
 class Interface(Atom):
@@ -104,7 +105,7 @@ class Interface(Atom):
         intfs = LIB.lldpctl_get_interfaces(conn)
         if intfs == FFI.NULL:
             raise StopIteration
-        for i in Interface.walk(intfs):
+        for i in Interface._walk(intfs):
             yield Interface(i)
 
 
