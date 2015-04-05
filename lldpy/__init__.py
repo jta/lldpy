@@ -5,6 +5,7 @@ from __future__ import print_function
 import cffi
 from contextlib import contextmanager
 import logging
+import time
 import threading
 
 import liblldpctl
@@ -181,6 +182,8 @@ class Watcher(threading.Thread):
             with self.connect() as conn:
                 self.load(conn)
                 self.loop(conn)
+            # delay retrying to connect in case socket is unavailable.
+            time.sleep(1)
 
     def load(self, conn):
         """ Load LLDP neighbors by pretending they've just been
@@ -192,11 +195,5 @@ class Watcher(threading.Thread):
 
     def loop(self, conn):
         """ Wait and react to events. """
-        while self.running:
-            err = LIB.lldpctl_watch(conn)
-            if not err:
-                continue
-            msg = LIB.lldpctl_strerror(err)
-            LOGGER.error(FFI.string(msg))
-            break
-
+        while self.running and not LIB.lldpctl_watch(conn):
+            pass
