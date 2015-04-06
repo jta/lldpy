@@ -56,23 +56,6 @@ class Atom(object):
         """ Check to see if capability field matches flag. """
         value = int(getattr(self, 'chassis_cap_enabled', 0))
         return bool(value & flag)
-
-    @property
-    def repeater_enabled(self):
-        return self._enabled(0x02)
-
-    @property
-    def bridge_enabled(self):
-        return self._enabled(0x04)
-
-    @property
-    def wlan_enabled(self):
-        return self._enabled(0x08)
-
-    @property
-    def router_enabled(self):
-        return self._enabled(0x10)
-
     def __repr__(self):
         return self.__dict__
 
@@ -90,6 +73,21 @@ class Atom(object):
 class Port(Atom):
     _key_to_type = dict(lldpctl_k_chassis_mgmt=Atom)
 
+    @property
+    def repeater_enabled(self):
+        return self._enabled(0x02)
+
+    @property
+    def bridge_enabled(self):
+        return self._enabled(0x04)
+
+    @property
+    def wlan_enabled(self):
+        return self._enabled(0x08)
+
+    @property
+    def router_enabled(self):
+        return self._enabled(0x10)
 
 class Ports(Atom):
     _key_to_type = dict(lldpctl_k_port_neighbors=Port)
