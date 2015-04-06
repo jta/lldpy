@@ -109,6 +109,21 @@ class Interface(Atom):
             yield Interface(i)
 
 
+class Encoder(json.JSONEncoder):
+    """ Encodes atom objects. """
+    def __init__(self, *args, **kwargs):
+        self.schema = kwargs.pop('schema', None)
+        super(Encoder, self).__init__(*args, **kwargs)
+
+    def default(self, obj):
+        """ Encode Atom object filtering by schema. """
+        if isinstance(obj, Atom):
+            attrs = (i for i in dir(obj) if not i.startswith('_'))
+            attrs = (i for i in attrs if self.schema is None or i in self.schema)
+            return dict((k, getattr(obj, k)) for k in attrs)
+        return super(Encoder, self).default(obj)
+
+
 class Watcher(threading.Thread):
     """ A thread which can be subclassed to watch for LLDP events. """
     def __init__(self):
