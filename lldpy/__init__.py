@@ -56,8 +56,9 @@ class Atom(object):
         """ Check to see if capability field matches flag. """
         value = int(getattr(self, 'chassis_cap_enabled', 0))
         return bool(value & flag)
+
     def __repr__(self):
-        return self.__dict__
+        return str(self.__dict__)
 
     @classmethod
     def _walk(cls, ptr):
